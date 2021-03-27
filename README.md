@@ -10,7 +10,7 @@ Simple integrate of API musixmatch.com with python
 # Quick start
 
 ```bash
-$ pip install git+https://github.com/proguy914629bot/async-python-musixmatch.git
+$ pip install git+https://github.com/proguy914629bot/async-python-musixmatch
 ```
 
 # Authentication
