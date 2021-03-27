@@ -1,6 +1,6 @@
 import json
 
-import requests
+import aiohttp
 
 
 class Musixmatch(object):
@@ -20,9 +20,12 @@ class Musixmatch(object):
     def _apikey(self):
         return self.__apikey
 
-    def _request(self, url):
-        request = requests.get(url)
-        return request.json()
+    async def _request(self, url):
+        async with aiohttp.ClientSession() as sess:
+            async with sess.get(url) as resp:
+                js = await resp.json()
+        await sess.close()
+        return js
 
     def _set_page_size(self, page_size):
         if page_size > 100:
@@ -31,7 +34,7 @@ class Musixmatch(object):
             page_size = 1
         return page_size
 
-    def chart_artists(self, page, page_size, country="us", _format="json"):
+    async def chart_artists(self, page, page_size, country="us", _format="json"):
         """This api provides you the list
         of the top artists of a given country.
 
@@ -42,14 +45,14 @@ class Musixmatch(object):
         country - A valid country code (default US).
         format - Decide the output type json or xml (default json).
         """
-        request = self._request(
+        request = await self._request(
             self._get_url(
                 f"chart.artists.get?page={page}&page_size={self._set_page_size(page_size)}&country={country}&format={_format}"
             )
         )
         return request
 
-    def chart_tracks_get(
+    async def chart_tracks_get(
         self, page, page_size, f_has_lyrics, country="us", _format="json"
     ):
         """This api provides you the list
@@ -63,14 +66,14 @@ class Musixmatch(object):
         country - A valid country code (default US).
         format - Decide the output type json or xml (default json).
         """
-        request = self._request(
+        request = await self._request(
             self._get_url(
                 f"chart.tracks.get?page={page}&page_size={self._set_page_size(page_size)}&country={country}&format={_format}&f_has_lyrics={f_has_lyrics}"
             )
         )
         return request
 
-    def track_search(
+    async def track_search(
         self, q_track, q_artist, page_size, page, s_track_rating, _format="json"
     ):
         """Search for track in our database.
@@ -100,7 +103,7 @@ class Musixmatch(object):
 
         Note: This method requires a commercial plan.
         """
-        data = self._request(
+        data = await self._request(
             self._get_url(
                 "track.search?"
                 "q_track={}&q_artist={}"
@@ -118,7 +121,7 @@ class Musixmatch(object):
         )
         return data
 
-    def track_get(
+    async def track_get(
         self,
         track_id,
         commontrack_id=None,
@@ -137,7 +140,7 @@ class Musixmatch(object):
         track_mbid - The musicbrainz recording id.
         format - Decide the output type json or xml (default json).
         """
-        data = self._request(
+        data = await self._request(
             self._get_url(
                 "track.get?"
                 "track_id={}&commontrack_id={}"
@@ -149,7 +152,7 @@ class Musixmatch(object):
         )
         return data
 
-    def track_lyrics_get(self, track_id, commontrack_id=None, _format="json"):
+    async def track_lyrics_get(self, track_id, commontrack_id=None, _format="json"):
         """Get the lyrics of a track.
 
         Parameters:
@@ -158,14 +161,14 @@ class Musixmatch(object):
         track_mbid - The musicbrainz track id.
         format - Decide the output type json or xml (default json).
         """
-        data = self._request(
+        data = await self._request(
             self._get_url(
                 f"track.lyrics.get?track_id={track_id}&commontrack_id={commontrack_id}&format={_format}"
             )
         )
         return data
 
-    def track_snippet_get(self, track_id, _format="json"):
+    async def track_snippet_get(self, track_id, _format="json"):
         """Get the snippet for a given track.
 
         A lyrics snippet is a very short representation of a song lyrics.
@@ -177,12 +180,12 @@ class Musixmatch(object):
         track_id - The musiXmatch track id.
         format - Decide the output type json or xml (default json).
         """
-        data = self._request(
+        data = await self._request(
             self._get_url(f"track.snippet.get?track_id={track_id}&format={_format}")
         )
         return data
 
-    def track_subtitle_get(
+    async def track_subtitle_get(
         self,
         track_id,
         track_mbid=None,
@@ -208,7 +211,7 @@ class Musixmatch(object):
         from the f_subtitle_length (seconds).
         format - Decide the output type json or xml (default json).
         """
-        data = self._request(
+        data = await self._request(
             self._get_url(
                 "track.subtitle.get?"
                 "track_id={}&track_mbid={}"
@@ -227,7 +230,7 @@ class Musixmatch(object):
         )
         return data
 
-    def track_richsync_get(
+    async def track_richsync_get(
         self,
         track_id,
         f_sync_length=None,
@@ -251,7 +254,7 @@ class Musixmatch(object):
         f_sync_length_max_deviation - The maximum deviation allowed.
         from the f_sync_length (seconds).
         """
-        data = self._request(
+        data = await self._request(
             self._get_url(
                 "track.richsync.get?"
                 "track_id={}&f_sync_length={}"
@@ -263,7 +266,7 @@ class Musixmatch(object):
         )
         return data
 
-    def track_lyrics_post(self, track_id, lyrics_body, _format="json"):
+    async def track_lyrics_post(self, track_id, lyrics_body, _format="json"):
         """Submit a lyrics to our database.
 
         It may happen we don’t have the lyrics for a song,
@@ -283,7 +286,7 @@ class Musixmatch(object):
         lyrics_body - The lyrics
         formatDecide the output type json or xml (default json)
         """
-        data = self._request(
+        data = await self._request(
             self._get_url(
                 "track.lyrics.post?track_id={}"
                 "&lyrics_body={}&format={}".format(track_id, lyrics_body, _format)
@@ -291,7 +294,7 @@ class Musixmatch(object):
         )
         return data
 
-    def track_lyrics_feedback_post(self, track_id, lyrics_id, feedback, _format="json"):
+    async def track_lyrics_feedback_post(self, track_id, lyrics_id, feedback, _format="json"):
         """This API method provides you the opportunity to help
         us improving our catalogue.
 
@@ -314,7 +317,7 @@ class Musixmatch(object):
         lines_too_long, wrong_verses, wrong_formatting
         format - Decide the output type json or xml (default json)
         """
-        data = self._request(
+        data = await self._request(
             self._get_url(
                 "track.lyrics.feedback.post?"
                 "track_id={}&lyrics_id={}"
@@ -323,7 +326,7 @@ class Musixmatch(object):
         )
         return data
 
-    def matcher_lyrics_get(self, q_track, q_artist, _format="json"):
+    async def matcher_lyrics_get(self, q_track, q_artist, _format="json"):
         """Get the lyrics for track based on title and artist.
 
         Parameters:
@@ -334,7 +337,7 @@ class Musixmatch(object):
         you can query using this id only (optional)
         format - Decide the output type json or xml (default json)
         """
-        data = self._request(
+        data = await self._request(
             self._get_url(
                 "matcher.lyrics.get?"
                 "q_track={}&q_artist={}&format={}".format(q_track, q_artist, _format)
@@ -342,7 +345,7 @@ class Musixmatch(object):
         )
         return data
 
-    def matcher_track_get(self, q_track, q_artist, _format="json"):
+    async def matcher_track_get(self, q_track, q_artist, _format="json"):
         """Match your song against our database.
 
         In some cases you already have some informations
@@ -359,7 +362,7 @@ class Musixmatch(object):
         without changing a row in your code, while we take care of
         improving the implementation behind. Cool, uh?
         """
-        data = self._request(
+        data = await self._request(
             self._get_url(
                 "matcher.track.get?"
                 "q_track={}&q_artist={}"
@@ -368,7 +371,7 @@ class Musixmatch(object):
         )
         return data
 
-    def matcher_subtitle_get(
+    async def matcher_subtitle_get(
         self,
         q_track,
         q_artist,
@@ -395,7 +398,7 @@ class Musixmatch(object):
 
         Note: This method requires a commercial plan.
         """
-        data = self._request(
+        data = await self._request(
             self._get_url(
                 "matcher.subtitle.get?q_track={}"
                 "&q_artist={}&f_subtitle_length={}"
@@ -412,7 +415,7 @@ class Musixmatch(object):
         )
         return data
 
-    def artist_get(self, artist_id, artist_mbid=None, _format="json"):
+    async def artist_get(self, artist_id, artist_mbid=None, _format="json"):
         """Get the artist data from our database.
 
         Parameters:
@@ -421,7 +424,7 @@ class Musixmatch(object):
         artist_mbid - Musicbrainz artist id.
         format - Decide the output type json or xml (default json).
         """
-        data = self._request(
+        data = await self._request(
             self._get_url(
                 "artist.get?artist_id={}"
                 "&artist_mbid={}&format={}".format(artist_id, artist_mbid, _format)
@@ -429,7 +432,7 @@ class Musixmatch(object):
         )
         return data
 
-    def artist_search(
+    async def artist_search(
         self, q_artist, page, page_size, f_artist_id, f_artist_mbid, _format="json"
     ):
         """Search for artists in our database.
@@ -444,7 +447,7 @@ class Musixmatch(object):
         (Range is 1 to 100).
         format - Decide the output type json or xml (default json).
         """
-        data = self._request(
+        data = await self._request(
             self._get_url(
                 "artist.search?q_artist={}"
                 "&f_artist_id={}&f_artist_mbid={}"
@@ -460,7 +463,7 @@ class Musixmatch(object):
         )
         return data
 
-    def artist_albums_get(
+    async def artist_albums_get(
         self,
         artist_id,
         g_album_name,
@@ -483,7 +486,7 @@ class Musixmatch(object):
         (range is 1 to 100).
         format - Decide the output type json or xml (default json).
         """
-        data = self._request(
+        data = await self._request(
             self._get_url(
                 "artist.albums.get?artist_id={}"
                 "&artist_mbid={}&g_album_name={}"
@@ -501,7 +504,7 @@ class Musixmatch(object):
         )
         return data
 
-    def artist_related_get(
+    async def artist_related_get(
         self, artist_id, page, page_size, artist_mbid=None, _format="json"
     ):
         """Get a list of artists somehow related to a given one.
@@ -515,7 +518,7 @@ class Musixmatch(object):
         (range is 1 to 100).
         format - Decide the output type json or xml (default json).
         """
-        data = self._request(
+        data = await self._request(
             self._get_url(
                 "artist.related.get?artist_id={}"
                 "&artist_mbid={}&page={}"
@@ -526,7 +529,7 @@ class Musixmatch(object):
         )
         return data
 
-    def album_get(self, album_id, _format="json"):
+    async def album_get(self, album_id, _format="json"):
         """Get an album from our database:
         name, release_date, release_type, cover art.
 
@@ -535,12 +538,12 @@ class Musixmatch(object):
         album_id - The musiXmatch album id.
         format - Decide the output type json or xml (default json)
         """
-        data = self._request(
+        data = await self._request(
             self._get_url("album.get?album_id={}&format={}".format(album_id, _format))
         )
         return data
 
-    def album_tracks_get(
+    async def album_tracks_get(
         self, album_id, page, page_size, album_mbid, f_has_lyrics=None, _format="json"
     ):
         """This api provides you the list of the songs of an album.
@@ -555,7 +558,7 @@ class Musixmatch(object):
         (range is 1 to 100).
         format - Decide the output type json or xml (default json).
         """
-        data = self._request(
+        data = await self._request(
             self._get_url(
                 "album.tracks.get?album_id={}"
                 "&album_mbid={}&f_has_lyrics={}"
@@ -571,7 +574,7 @@ class Musixmatch(object):
         )
         return data
 
-    def tracking_url_get(self, domain, _format="json"):
+    async def tracking_url_get(self, domain, _format="json"):
         """Get the base url for the tracking script
 
         With this api you’ll be able to get the base
@@ -587,14 +590,14 @@ class Musixmatch(object):
         domain - Your domain name.
         format - Decide the output type json or xml (default json).
         """
-        data = self._request(
+        data = await self._request(
             self._get_url(
                 "tracking.url.get?" "domain={}&format={}".format(domain, _format)
             )
         )
         return data
 
-    def catalogue_dump_get(self, url):
+    async def catalogue_dump_get(self, url):
         """Get the list of our songs with the lyrics last updated information.
 
         CATALOGUE_COMMONTRACKS
@@ -612,10 +615,10 @@ class Musixmatch(object):
 
         Note: This method requires a commercial plan.
         """
-        data = self._request(self._get_url(url))
+        data = await self._request(self._get_url(url))
         return data
 
-    def genres_get(self, _format="json"):
+    async def genres_get(self, _format="json"):
         """Get the list of the music genres of our catalogue:
         music_genre_id, music_genre_parent_id, music_genre_name, music_genre_name_extended, music_genre_vanity
 
@@ -623,7 +626,7 @@ class Musixmatch(object):
 
         format - Decide the output type json or xml (default json)
         """
-        data = self._request(
+        data = await self._request(
             self._get_url("music.genres.get?" "format={}".format(_format))
         )
         return data
